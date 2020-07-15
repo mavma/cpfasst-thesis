@@ -1,0 +1,267 @@
+% !TEX root = ../main.tex
+\chapter{Interoperability between C and Fortran}
+\label{chapter:interoperability}
+
+\textbf{Note on definitions:} For the purposes of this work, a \textit{processor} is defined according to the Fortran standard \cite{adams2008fortran}: the combination of a compiler and the computing system used for program execution. Additionally, \textit{procedure} is used as a general term to refer to Fortran functions and subroutines, as well as C functions.
+
+Interoperability with Fortran is a challenging prospect, due to how the Fortran standard is written: it is permissive by design. The standard specification is limited to \cite{F90standard,F2003standard,F2018standard}: 
+
+\begin{itemize}
+	\item the forms that a program written in the Fortran language can take,
+	\item the rules for interpreting the meaning of a program and its data,
+	\item the form of the input data to be processed by such a program, and
+	\item the form of the output data resulting from the use of such a program.
+\end{itemize}
+
+Any aspect not covered by the standard is considered to be processor-dependent, and is left up to its implementation. Processors are also considered standard-conforming even when implementing features not described in the standard. This allows for greater experimentation and development of the language, with successful features becoming candidates for inclusion in the standard on future versions, but also requires the programmer to know about and avoid those extra features when portability is desirable \cite{adams2008fortran}. In addition to this, the AMD64 ABI (Application Binary Interface) explicitly states that a formal Fortran ABI is neither provided or desirable, as it would hinder a compiler's ability to optimize for high performance applications on its target system \cite{x86_64_abi}. Some guidelines are provided for Fortran 77--compatible features in the interest of interoperability, but each compiler implementation is otherwise free to do as they see fit.
+
+However, as mentioned in \refChapter{chapter:introduction}, there is significant demand for the reuse of Fortran code, especially in the scientific computing community, and often from code written in a different language. The Fortran 2003 standard addresses this by the introduction of a standardized interoperability interface between Fortran and C. The choice of C is not incidental: aside from all Fortran 77-compatible features having a direct equivalent in C, C is recognized as a ``lingua Franca'' of programming languages \cite{adams2008fortran}. A number of other programming languages support interoperability with C, including scientific computing staples MATLAB, C++, Python, and R, and support for C interoperability in Fortran indirectly allows any such language to also interoperate with Fortran. Interestingly enough, it also provides the only standard means of interoperability between binaries from different Fortran compilers --- though in this case it is preferable to simply recompile the code.
+
+While the use of Fortran 2003 interoperability features precludes many of the challenges in C integration, looking at how C/Fortran interoperable programs were built before those features were introduced provides significant insight into the similarities and differences between C and Fortran, and illustrates some of the challenges introduced by interoperability in general. \refSection{sec:interop_f90} provides an overview of C/Fortran interoperability mechanisms using only Fortran 90 features. \refSection{sec:interop_f03} introduces the Fortran 2003 C interoperability features, and how they address previous issues.
+
+This analysis is restricted to the implementation of correct calls to procedures between the two languages. While interoperable access between Fortran \ilc{common} blocks and C global variables is defined in the Fortran 2003 standard, the use of those features often discouraged as a bad programming practice even in single-language environments \cite{clerman2011modern}, so aspects of interoperability exclusive to their use will not be discussed here.
+
+\section{Fortran 90} \label{sec:interop_f90}
+
+\textbf{An important \textit{caveat}:} as this section will demonstrate, interoperability between C and Fortran 90 relies heavily on processor-dependent behavior, and as such there can be no expectation of portability. The code examples provided were tested using the GNU Compiler Collection version 10.1.0, targeting the x86-64 Linux GNU platform, and may require adjustments for any other environment. It is important to read this section not as a tutorial, but as a guide to important aspects of compatibility that must be considered when developing multi-language applications. Use of the standard interoperability features described in \refSection{sec:interop_f03} is strongly recommended over the techniques shown here.
+
+Fortran standards prior to 2003 did not offer standardized support for interoperability with C. However, the two languages are linked for historical reasons, with the first complete Fortran 77 compiler \cite{feldman1985portable}, \textit{f77}, using the second pass of a C compiler as a code generator \cite{feldman1979implementation}, establishing the groundwork for C representations of Fortran types, and compatibility between equivalent Fortran and C procedure calls. This equivalence goes so far as to enable automated conversion of Fortran 77 source code (even extending into some Fortran 90 features) into C \cite{feldman1990fortran}. 
+
+Ensuring correctness for a procedure call between C and Fortran is at a low-level no different from ensuring correctness for a procedure call between two different compiling units in either of the two languages. The practical difference arises from the fact that in a single-processor environment, the user need not be concerned with (or, in most cases, even aware of) most of those aspects, as the compiler and linker will handle them automatically.
+
+In general, the requirements for an interoperable procedure call can be summarized as:
+\begin{enumerate}
+	\item \textbf{Data types must be correctly defined wherever the data is accessed:} A simplistic interpretation of this requirement is that both the caller and callee must have matching definitions of the data types in the procedure's arguments and return values. That need not be the case, though: if a type is not accessed in the callee context, but a data of that type is passed as an argument for architecture reasons, or in order to be forwarded to a different procedure call, there is no need to provide the callee with a definition of the type (it is then considered opaque to the callee). On the other hand, consider a C pointer passed as an argument to a C function which accesses the referenced data: it is not sufficient for the function to understand how a C pointer is defined, it also needs a definition for the data it references.
+	\item \textbf{Caller and callee must have the same interpretation of a procedure:} In a single-compiler environment, this is guaranteed as long as both reference the procedure by the same syntax. In multi-language programs, complications can arise from different argument and return value passing conventions, or different call sequences. Some interoperability tools, such as language bindings, will automatically handle this. In cases where such a tool isn't available (as is the case between Fortran 90 and C), the developer must be aware of the inner workings of both compilers in order to insure this.
+\end{enumerate}
+
+\subsection{Intrinsic data types} \label{sec:interop_f90_intrinsic}
+
+While the Fortran standard defines only five intrinsic types (\ilc{integer}, \ilc{real}, \ilc{complex}, \ilc{character}, and \ilc{logical}), it is possible, through the use of type parameters, to create an arbitrary number of standard-complying primitive types. The default parameters, and the underlying data representation, are processor-dependent. While a number of sources defining built-in type mappings between C and Fortran is readily available on the internet, they often do not include information on which compilers and platforms they apply to, making their use unreliable. Documentation from the compiler and/or platform can be used to determine proper type mappings, but a popular alternative is to run test code to comparing different data types in each language until the desired match is found. The x86-64 guidelines for Fortran 77--compatible types, which are followed by GCC, recommend the use of the type mappings provided by \textit{g77} \cite{x86_64_abi}, some of which are shown in \refTable{tab:f90types}.
+
+\begin{table}
+	\centering
+	\begin{tabular}{|c|c|c|}
+		\hline 
+		Fortran 77 & Fortran 90 & C \\
+		\hline 
+		\hline 
+		\ilc{INTEGER*4} 	& \ilc{integer(kind=4)} 	& \ilc{int} \\
+		\hline 
+		\ilc{INTEGER*8} 	& \ilc{integer(kind=8)} 	& \ilc{long int} \\
+		\hline 
+		\ilc{REAL*4} 		& \ilc{real(kind=4)} 		& \ilc{float} \\
+		\hline 
+		\ilc{REAL*8}		& \ilc{real(kind=8)} 		& \ilc{double} \\
+		\hline 
+		\ilc{COMPLEX*4} 	& \ilc{complex(kind=4)} 	& \ilc{float _Complex} \\
+		\hline 
+		\ilc{COMPLEX*8} 	& \ilc{complex(kind=8)} 	& \ilc{double _Complex} \\
+		\hline 
+		\ilc{LOGICAL}		& \ilc{logical} 			& \ilc{signed int} \\
+		\hline
+		\ilc{CHARACTER} 	& \ilc{character} 			& \ilc{char[]} \\
+		\hline 
+	\end{tabular}
+	\caption{Mapping between Fortran 77--compatible types and C built-in types for the x86-64 platform. Adapted from \cite{x86_64_abi}.}
+	\label{tab:f90types}
+\end{table}
+
+Most of the type mappings are straightforward, but the two non-numeric types warrant specific discussion: 
+\begin{itemize}
+	\item In standard C, relational, equality and logical operators return \ilc{0} for \textit{false} and \ilc{1} for \textit{true}, while conditional statements consider a value \textit{false} when it is equal to zero, and \textit{true} otherwise \cite{C11standard}. Meanwhile, the underlying representation of Fortran's \ilc{logical} values \ilc{.true.} and \ilc{.false.} is processor-dependent. For interoperability, it is important to ensure a match not only in the underlying representation, but also in the values.
+	\item C expects character strings to be terminated by a \ilc{null} character, but Fortran makes no such guarantee, so care must be taken when processing a string created by Fortran in a C environment. Additionally, Fortran \ilc{character} strings often modify a procedure's call signature when passed as arguments. This is further discussed in \refSection{sec:interop_f90_strings}.
+\end{itemize}
+
+\subsection{Procedure arguments and returns} \label{sec:interop_f90_calls}
+
+One of the fundamental differences between C and Fortran relates to argument passing conventions: in C, function arguments are always passed by value (what is referred to by C programmers as ``passing by reference'' is in fact passing a pointer argument by value). Meanwhile, the Fortran 90 standard leaves the mechanism of argument passing entirely up to the implementation, but the behavior it defines is that of passing by reference, except for dummy arguments with the \ilc{intent(in)} attribute. In the interest of maintaining backwards compatibility with Fortran 77, which does not support the \ilc{intent} attribute, Fortran compilers usually pass all formal arguments by reference through a C-style pointer, and any additional compiler-generated arguments either by value or reference. To accommodate this difference, the C implementation must be adjusted to always take pointers to the desired argument values, instead of the values themselves, and dereference them on use. The source code in \ref{src:f90_calls} illustrates this in both directions.
+
+\begin{listing}
+	\inputminted{C}{src/f90/calls/csrc.c}
+	\inputminted{Fortran}{src/f90/calls/fsrc.f90}
+	\caption{Example of interoperable procedure calls between Fortran 90 and C code, using GNU Fortran 10.1.0 in the x86-64 platform.}
+	\label{src:f90_calls}
+\end{listing} 
+
+Function return values in Fortran behave as if passed by value, but their actual behavior is processor-defined and often involves the result value as a hidden argument, appended by the compiler to the function signature. gfortran utilizes a hidden result values for functions returning arrays or the \ilc{character} type \cite{gfortranmanual}. If possible, it is best to avoid this issue entirely by restricting interfaces to Fortran subroutines, which are equivalent to C functions with \ilc{void} return type, and add a parameter to the function (which on the Fortran side should be either \ilc{intent(out)} or \ilc{intent(inout)}) for any data to be passed from the callee to the caller. This does not, however, preclude the addition of hidden arguments by the Fortran compiler for different reasons --- one common example is shown in \refSection{sec:interop_f90_strings}.
+
+It is important to note that while matching symbol names (discussed in \refSection{sec:interop_f90_names}), argument passing conventions and data type definitions is usually sufficient for correct interoperable calls, it is possible (and at least for x86-64, allowed) that the Fortran compiler does not comply with the platform's C calling convention at all. In this case, a deeper analysis is needed to find which calling conventions are supported on both sides, and whether the calling convention can be modified through compiler directives or flags.    
+
+\subsection{Symbol names} \label{sec:interop_f90_names}
+
+When linking binaries originating from a single compiler, matching symbol names between different compilation units is not a concern --- as long as the code is correct, the symbol name resolution process is transparent to the user. In multi-language programming there is often need for user input in this process. A common use case is interoperability between C and C++ compilers: while the two languages are close in syntax, they use different symbol name decoration and mangling schemes, so a naive implementation will cause a mismatch in symbol names. In this case the solution is simple: declaring a function with the modifier \ilc{extern "C"} tells the compiler to use a C-style symbol for that function. In the case of C and Fortran 90, however, no such mechanism is available: the developer must understand the symbol name decoration schemes for each of the compilers involved, and name their procedures such that both sides will refer to the resulting symbol by the same name. It is likely that this results in the same procedure being referred to by similar but different names in either language. It is important to highlight that these name decoration schemes are expected to change between platforms for C, and between platforms, compilers, or even compiler versions for Fortran, and can also be affected by compiler flags and directives \cite{gfortranmanual}. This makes symbol names a major issue when it comes to interoperability.
+
+The code in \refSrc{src:f90_calls} illustrates symbol name decoration for this processor: C functions produce symbols with no added decoration, while external Fortran procedures produce symbols in lowercase, with one trailing underscore (ignoring the ABI's guideline \cite{x86_64_abi} of two trailing underscores for names containing an underscore). For this scenario, reconciling C and Fortran names is simple: use only lowercase names and append an underscore to names of interoperable procedures on the C code. Alternatively, GNU Fortran's \ilc{-fno-underscoring} flag can be used to modify the behavior --- the lowercase restriction remains, as Fortran syntax is case-insensitive. Fortran functions inside modules (not illustrated in this section) follow a more complex, processor-specific mangling scheme.
+
+\subsection{Arrays and array descriptors} \label{sec:interop_f90_arrays}
+
+A widely known difference between C and Fortran relates to the storage of multidimensional arrays: C utilizes a row-major layout, and Fortran a column-major one. In both cases the layout is fixed by the standard, and correct interoperable access of a multidimensional array created by the other language requires inverting the order of array subscripts. C subscripts are zero-indexed, while Fortran subscripts are one-indexed, and any subscripts passed as arguments should be adjusted to reflect that.
+
+\textit{Efficient} interoperable access, however, is a different matter, as simply inverting the subscripts will often break spatial locality and result in cache-unfriendly code. Efficient access requires either changing the code to optimize for the other language's layout or converting between layouts through an auxiliary copy of the array. When feasible, it is best to avoid this scenario entirely and access the data only in one language.
+
+C and Fortran generally pass array arguments in a similar manner, through the address of the first array element. The following restrictions apply:
+\begin{itemize}
+	\item The entire array must be stored in contiguous memory. In Fortran 90 that is guaranteed by the standard, but in C, dynamically allocated multidimensional arrays are sometimes implemented a list of pointers to row data --- this layout is not interoperable unless data for the rows is contiguous, in which case a pointer to the start of the data, not to the pointer list, must be passed.
+	\item For Fortran procedures, interoperability of array arguments depends on how they are declared. This is illustrated in \refSrc{src:f90_arrays}.
+		\begin{itemize}
+			\item \textit{Explicit-shape array} dummy arguments are interoperable with a C array of the same total size;
+			\item \textit{Assumed-size array} dummy arguments are interoperable with a C array. Array dimensions can be passed as separate arguments as needed;
+			\item \textit{Assumed-shape} dummy arguments are not interoperable. Fortran procedures containing these arguments expect a pointer not to the first element, but to a compiler-dependent descriptor, further discussed in \refSection{sec:interop_f90_derived}.
+		\end{itemize}
+\end{itemize}
+
+\begin{listing}
+	\inputminted{C}{src/f90/array_types/csrc.c}
+	\inputminted{Fortran}{src/f90/array_types/fsrc.f90}
+	\caption{Fortran 90 and C code illustrating how different array dummy arguments affect interoperability. Though the actual argument is the same, use of an assumed-shape dummy argument changes the low-level mechanism for argument passing, causing the C function incorrectly interpret that argument.}
+	\label{src:f90_arrays}
+\end{listing}
+
+\subsection{Strings} \label{sec:interop_f90_strings}
+
+As mentioned in \refSection{sec:interop_f90_intrinsic}, treatment of character strings differs significantly between the two languages. C does not have a native string type. By convention, and following the behavior of the standard C functions for string handling \cite{C11standard}, a C string is a \ilc{char} array terminated by the \ilc{NULL} (\ilc{'\0'}) character. A C function operating on a string typically takes only a pointer to the start of the array as argument, and is not explicitly aware of its length --- the string is instead considered to extend until the \ilc{NULL} terminator.
+
+Meanwhile, Fortran strings are of intrinsic type \ilc{character}, with length specified by the \ilc{len} type parameter, and unused space being padded with blank (\ilc{' '}) characters. A procedure taking a character string as a dummy argument can specify an explicit or assumed-length parameter. Assumed-length dummy arguments will automatically adapt to the actual argument used for the call, while explicit length dummy arguments will cause an actual argument of higher length to be truncated. Implementation of this behavior is processor-dependent, but most compilers use the convention established by f77: a pointer to the character string is passed as an argument at the position of the dummy argument, and a pass-by-value \ilc{integer} hidden argument is appended to the end of the argument list, containing the length of the string and passed by value. If multiple string dummy arguments are present, their length hidden arguments are appended in the order of their appearance in the argument list. In GNU Fortran, the length of the actual argument is passed as a hidden argument regardless of how the dummy argument length is specified, but ignored for dummy arguments of explicit length.
+
+When designing a C function to be called from Fortran, the additional argument can be read as a C \ilc{int} at the correct position. If the Fortran string is used as an argument to any C functions that do not take a length argument, a \ilc{NULL} terminator should first be appended to avoid out-of-bounds access issues. When calling a Fortran function from C, the string length hidden argument must be correctly passed, its value being the string length as returned by the C function \ilc{strlen}.
+
+A great example of how reliance on processor-specific behavior for interoperability can cause issues is related to this mechanism: in 2019, a GNU Fortran update broke a number of C applications that omitted the hidden argument in BLAS/LAPACK calls for single-character strings, including CBLAS and LAPACKE. An unrelated bug fix exposed this issue, which had been carried on between implementations from decades, eventually prompting the compiler to add a flag to disable the bug fix due to the number of applications affected \cite{kalibera2019gfortran,corbet2019scstrings}.
+
+\subsection{Derived data types} \label{sec:interop_f90_derived}
+
+Type-shadowing is the creation of an equivalent representation for a derived type in a different language, allowing correct access to the data contained in variables of that type. A Fortran \ilc{type} can be shadowed by a C \ilc{struct}, and vice-versa, with the following restrictions\cite{pletzer2008exposing}:
+
+\begin{itemize}
+	\item All members must be of interoperable types (including members of derived types); 
+	\item The Fortran \ilc{type} must have the \ilc{sequence} attribute to prevent the compiler from reordering members in memory;
+	\item If the Fortran and C compilers use different rules for structure padding, manual padding or packing may be required;
+\end{itemize}
+
+The main challenge lies in fulfilling the first condition, in particular for numerical applications using modern Fortran features. As mentioned in \refSection{sec:interop_f90_arrays}, assumed-shape array dummy arguments are not interoperable, as they are wrapped in an opaque descriptor by the Fortran compiler. This also applies to assumed-shape type members, and additionally applies to members with the \ilc{allocatable} or \ilc{pointer} attributes. In order for those members (and thus the type) to be interoperable, the C code must be capable to interpret the processor-dependent Fortran descriptors, which are not documented and, for closed-source compilers, must be reverse-engineered. The CHASM Language Interoperability Tools \cite{rasmussen2001chasm} project provides a C interface to Fortran array descriptors for different compiler vendors, but is no longer maintained.
+
+Even if the goal is to treat members of non-interoperable types as opaque, while maintaining access to members of interoperable types, defining a shadowing type can be difficult. The size of the descriptors varies between compiler vendors and platforms, as shown in \refTable{tab:f90descriptors}. Even with the introduction of standardized C interoperability features by Fortran 2003, there is no mechanism allowing a reliable implementation of type-shadowing for types containing descriptor-based members. In 2012, a technical specification was released defining standardized C descriptors for assumed-shape, assumed-rank, and deferred-shape arrays, including allocatables and pointers --- as of GNU Fortran version 10.1.0, it remains not fully supported \cite{gfortranmanual}.
+
+\begin{table}
+	\centering
+	\begin{tabular}{|c|c|c|c|}
+		\hline 
+		Processor & \ilc{array(:)} & \ilc{array(:,:)} & \ilc{array(:,:,:)} \\
+		\hline 
+		\hline 
+		gfortran 4.1.2 i686 	& 24 & 36 & 48 \\
+		\hline 
+		gfortran 4.1.1 x86\_64 	& 72 & 96 & 120 \\
+		\hline 
+		ifort 10.1 i686 		& 48 & 60 & 72 \\
+		\hline 
+		ifort 9.1.041 ia64		& 96 & 120 & 144 \\
+		\hline 
+	\end{tabular}
+	\caption{Size in bytes of derived types with a pointer array member of rank 1, 2 and 3. Adapted from \cite{pletzer2008exposing}}
+	\label{tab:f90descriptors}
+\end{table}
+
+
+
+\section{Fortran 2003} \label{sec:interop_f03}
+
+In light of all the previously mentioned issues with interoperability in earlier standards, the Fortran 2003 standard introduced standardized support for interoperability with C. The interoperability features in this standard do not introduce much in the way of new solutions, but rather formalize what was previously known to work with most Fortran 90 compilers \cite{pletzer2008exposing}. Still, having those features as part of the standard allows something that was previously impossible: portability. Any standard-compliant interoperable interfaces are guaranteed to work between a processor implementing the Fortran 2003 standard and one of its companion processors.
+
+The standard defines a \textit{companion processor} as a processor-dependent mechanism by which global data and procedures may be referenced or defined \cite{F2003standard}. This is not necessarily a C compiler, but any processor capable of working with data and procedures described in terms of C (e.g. a C++ compiler). To comply with the Fortran 2003 standard, a Fortran processor must define at least one companion processor --- which can be itself. The Fortran processor is not required to correctly interoperate with any processor it does not explicitly define as a companion. For Fortran processors defining multiple companions, the means of selecting between them are processor-dependent.
+
+Standard interoperability can be summarized by two major features:
+\begin{itemize}
+	\item The \textbf\texttt{iso\_c\_binding} intrinsic module provides named constants, derived data types, and module procedures supporting interoperability;
+	\item The \textbf\texttt{bind(C)} attribute, applicable to procedures and derived types, marks a Fortran element as interoperable with C. This triggers the Fortran processor to adjust its low-level representation of that element, ensuring compatibility with the companion processor, but also imposes some restrictions on what the element may contain.
+\end{itemize}
+
+This section details how the previously described approach to interoperability for Fortran 90 code is affected by the use of these features.
+
+\subsection{Intrinsic data types} \label{sec:interop_f03_intrinsic}
+
+As discussed in \refSection{sec:interop_f90_intrinsic}, the question of interoperability between C and Fortran intrinsic types is largely one of determining the correct \ilc{kind} type parameters to match each C type for a given processor. This issue is solved in a portable manner through the use of the kind parameter constants defined by the \ilc{iso_c_binding} intrinsic module, which are guaranteed to match the companion processor's implementation of a given C type. \refTable{tab:f03types} shows a small sample of the available constants and their correspondence with intrinsic C types. Contrasting it to \refTable{tab:f90types} reveals an additional benefit of the use of these constants: since they are named after their C equivalents, readability of interoperable Fortran types is improved, as design intention of the choice of kind value is clearly communicated. This, in turn, facilitates equivalency between references to the type in Fortran and C. 
+
+\begin{table}
+	\centering
+	\begin{tabular}{|c|c|}
+		\hline 
+		Fortran type & C type \\
+		\hline 
+		\hline 
+		\ilc{integer(kind=c_int)}				& \ilc{int} \\
+		\hline 
+		\ilc{integer(kind=c_long)}				& \ilc{long int} \\
+		\hline 
+		\ilc{real(kind=c_float)} 				& \ilc{float} \\
+		\hline 
+		\ilc{real(kind=c_double)}				& \ilc{double} \\
+		\hline 
+		\ilc{complex(kind=c_float_complex)} 	& \ilc{float _Complex} \\
+		\hline 
+		\ilc{complex(kind=c_double_complex)} 	& \ilc{double _Complex} \\
+		\hline 
+		\ilc{logical(kind=c_bool)}				& \ilc{_Bool} \\
+		\hline
+		\ilc{character(kind=c_char)} 			& \ilc{char} \\
+		\hline 
+	\end{tabular}
+	\caption{A sampling of \ilc{iso_c_binding} kind parameter constants and their correspondent C types \cite{F2003standard}.}
+	\label{tab:f03types}
+\end{table}
+
+As with Fortran 90, interoperabilty of \ilc{logical} and \ilc{character} warrants additional observations: 
+\begin{itemize}
+	\item The \ilc{logical(c_bool)} type is guaranteed to interoperate with C99's \ilc{_Bool} type, for which the C standard defines the values \ilc{true} as 0 and \ilc{false} as 1. However, for the reasons mentioned in \refSection{sec:interop_f90_intrinsic}, it is common in C code to use variables of integer type to storage of boolean values, and to consider any value non equal to zero as \ilc{true}. Such representations are not interoperable, and should be cast into \ilc{_Bool} types for interoperable use \cite{gfortranmanual}.
+	\item The \ilc{character(c_char)} type is only considered interoperable when its length is fixed and equal to 1. This changes the representation of interoperable strings, which must now be defined by Fortran as an array. Treatment of strings in this scenario is detailed in \refSection{sec:interop_f03_strings}.
+\end{itemize}
+
+Two derived Fortran types are defined by the \ilc{iso_c_binding} module: \ilc{c_ptr} is interoperable with a C data pointer, and \ilc{c_funptr} is interoperable with a C function pointer. Used in conjunction with the module functions \ilc{c_loc} (which returns a \ilc{c_ptr} containing the address of a Fortran variable) and \ilc{c_funloc} (which returns a \ilc{c_funptr} containing the address of a Fortran procedure), these types provide full interoperability with C pointers.
+
+\subsection{Procedures} \label{sec:interop_f03_calls}
+
+A Fortran procedure is considered interoperable if it has the \ilc{bind(C)} attribute. This applies both to procedures defined in Fortran to be callable from C, and to procedures declared in a Fortran interface block and defined in C --- as shown in \refSrc{src:f90_arrays}, the interface defines how Fortran invokes a procedure. A \ilc{bind(C)} procedure is considered interoperable, and must obey a set of restrictions enforced by the compiler. Included in those conditions are \cite{adams2008fortran}:
+\begin{itemize}
+	\item Each dummy argument of an interoperable procedure must be an interoperable variable or an interoperable procedure. This excludes arguments with the \ilc{allocatable} and \ilc{pointer} attributes, assumed-shape arrays, and \ilc{character} types with length other than 1. Aside from character strings, these were known restrictions for interoperability with Fortran 90, as discussed in \refSection{sec:interop_f90}, which the standard makes official.
+	\item The result variable of an interoperable function procedure or interface must be an interoperable scalar variable. This precludes the issues discussed in \refSection{sec:interop_f90_calls} with some return types are implemented by Fortran compilers as hidden arguments.
+\end{itemize}
+
+A Fortran procedure with the \ilc{bind(C)} attribute is guaranteed to be interoperable with a C function prototype if the conditions below are met \cite{F2003standard}:
+\begin{itemize}
+	\item If the Fortran procedure is a subroutine, the C function must have a return type of \ilc{void}. If it is a function, the return types of both functions must be interoperable;
+	\item Each argument in the C function corresponds directly to the Fortran dummy argument in that position, and:
+		\begin{itemize}
+			\item If the Fortran dummy argument has the \ilc{value} attribute, the C function argument and the Fortran dummy argument are of interoperable types;
+			\item Otherwise, the C function argument is a pointer referencing an entity interoperable with the Fortran dummy argument type;
+		\end{itemize}
+\end{itemize}
+
+With the previous conditions met, the Fortran processor is guaranteed to generate a low-level representation of the procedure interface consistent with the companion processor's low-level representation of the C function prototype. This includes correct matching of the companion processor's calling convention, precluding the related issues mentioned in \refSection{sec:interop_f90_calls}.
+
+When applied to a procedure, the \ilc{bind(C)} statement generates a \textit{binding label}, which determines the name by which it can be referred to in C code. A case-sensitive binding label can be specified in the bind statement (\ilc{bind(C, name="BindingLabel")}), and is independent of the procedure name in Fortran. If a binding label is not explicitly defined, the lowercase name of the Fortran procedure is used. Binding labels are required to be unique in a Fortran program. For cases where it is desirable to declare an interoperable procedure interface without an unique global identifier (e.g. when specifying the type of a procedure pointer), an empty label can be specified in the \ilc{bind} statement.
+
+\begin{listing}
+	\inputminted{C}{src/f03/calls/csrc.c}
+	\inputminted{Fortran}{src/f03/calls/fsrc.f90}
+	\caption{Example of interoperable procedure calls between Fortran and C code, using the Fortran 2003 standard interoperability features.}
+	\label{src:f03_calls}
+\end{listing}
+
+\refSrc{src:f03_calls} illustrates interoperability of the same functions as \refSrc{src:f90_calls}, with the use of standard interoperability features. The \ilc{bind(C)} procedures are referenced by the same names in both languages --- a property that also applies if they are defined inside a Fortran module. If a \ilc{bind(C)} procedure does not fit the restrictions for interoperability, a compiler error is generated: adding a \ilc{bind(C)} label to the interface procedure in \refSrc{src:f90_arrays} will cause it to not compile unless the assumed-shape array dummy argument is removed.
+
+\subsection{Derived data types and arrays} \label{sec:interop_f03_derived}
+
+The mechanism of interoperability for derived data types is similar to procedures: to be considered interoperable, a type must have the \ilc{bind(C)} attribute, and all its members must be of interoperable types. Additionally, such a type may not use object-oriented Fortran features, such as the \ilc{extends} attribute or type-bound procedures. Use of the \ilc{sequence} attribute, recommended in \refSection{sec:interop_f90_derived}, is also forbidden: it is, however, not relevant here, as the resulting type is guaranteed to match the companion processor's representation of an equivalent C \ilc{struct}. The restrictions discussed in \refSection{sec:interop_f90_derived} still apply, as \ilc{allocatable}, \ilc{pointer}, and assumed-shape types are not considered interoperable, and as such cannot be members of an interoperable type.
+
+Interoperability for arrays remains the same as described in \refSection{sec:interop_f90_arrays}. Assumed-shape and deferred-shape arrays, previously known to not be interoperable, are now explicitly disallowed as dummy arguments to interoperable procedures and members of interoperable derived types, as are Fortran 2003's assumed-rank arrays.
+
+\subsection{Strings} \label{sec:interop_f03_strings}
+
+As mentioned in \refSection{sec:interop_f03_intrinsic}, the \ilc{character(c_char)} type is only considered interoperable when used with a fixed length equal to 1. As a consequence of this restriction, an interoperable string is represented in Fortran as it is in C: a 1D array of type \ilc{character(c_char)}. Fortran's rules of sequence association allow a dummy argument this type to be associated with an actual argument that is a Fortran-style string \cite{F2003standard}, but the user still needs to be aware of the differences in string conventions when it comes to null-termination vs blank padding, and convert between them accordingly. An example of this use is shown in \refSrc{src:f03_strings}.
+
+\begin{listing}
+	\inputminted{C}{src/f03/strings/csrc.c}
+	\inputminted{Fortran}{src/f03/strings/fsrc.f90}
+	\caption{Use of interoperable strings in a C function called from Fortran, in accordance with the Fortran 2003 standard. Sequence association rules allow a Fortran string actual argument to be associated with the interoperable character array dummy argument. Adapted from \cite{F2003standard}.}
+	\label{src:f03_strings}
+\end{listing}

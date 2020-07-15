@@ -1,0 +1,28 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+			"file_exclude_patterns": ["*.aux", "*.bbl", "*.blg", "*.fdb_latexmk", "*.fls", "*.glo", "*.log", "*.out", "*.synctex.gz", "*.toc", "*.xdy"],
+			"folder_exclude_patterns": ["pythonenv", "_minted-main", "src"]
+		}
+	],
+
+	"settings" : {
+        "builder_settings": {
+            "options": ["--shell-escape", "--file-line-error"]
+        },
+
+        "todoreview": {
+        	"exclude_folders": ["pythonenv*", "_minted-main*", "src*", ".git*"],
+        	"exclude_files": ["*.aux", "*.bbl", "*.blg", "*.fdb_latexmk", "*.fls", "*.glo", "*.log", "*.out", "*.synctex.gz", "*.toc", "*.xdy", 
+        		"*.sublime-workspace", "*.sublime-project"],
+            "patterns": {
+			    "TODO": "%\\s*?TODO\\s*?:?\\s*(?P<todo>.*)$",
+			    "REVIEW": "%\\s*?REVIEW\\s*?:?\\s*(?P<review>.*)$",
+			    "END": "%\\s*?END\\s*?:?\\s*(?P<end>.*)$"
+			}
+        }
+    }
+}
+ 

@@ -1,0 +1,12 @@
+% !TEX root = ../main.tex
+\chapter{Interfaces for non-interoperable derived types} \label{appendix} \label{sec:derived_type_interface}
+
+Once it is determined that a Fortran type appearing as a dummy argument in a procedure call we wish to forward to C code cannot be made interoperable, two approaches were identified in this work to allow the C implementation to access its components. These were ultimately not employed in this work, as the final interface was able to elliminate the non-interoperable arguments entirely, but are presented for didactic purposes with a code example:
+\begin{enumerate}
+    \item Break the Fortran type down into interoperable components, and pass them as individual arguments to the C function. This is sufficient if the impediment for interoperability of the type is, for instance, an allocatable member of interoperable type. It cannot be used to access deferred-shape array members of derived noninteroperable types, as the argument list would be of unknown size. Its main drawbacks are that it leads to arbitrarily large argument lists, making the C interface hard to read and document, and is hard to code and maintain, with any changes to type structure requiring one (or several, for nested types) arguments to change.
+    \item Remove the Fortran type from the argument list, and instead provide a handle as an argument, along with an extensive interface of interoperable getter/setter procedures for individual type components, which the C code can invoke with the handle to manipulate a type\footnote{The getter/setter approach was based on Protocol Buffers (\url{https://developers.google.com/protocol-buffers}), which can be used for interoperability of derived types, providing automated code generation in multiple languages (but not Fortran)}. This approach does not increase complexity of the argument list, and can provide access allocated nested types. It is, however, better suited to automatic code generation than manual coding, as the numerous generated getters and setters would need validation and maintenance, and has the potential to strongly affect performance if invoked from the wrapper callbacks.
+\end{enumerate}
+
+\begin{code}
+	\inputminted[fontsize=\footnotesize]{Fortran}{src/snippets/derived_type_access.f90}	
+\end{code}

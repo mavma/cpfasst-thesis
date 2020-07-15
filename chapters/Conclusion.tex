@@ -1,0 +1,17 @@
+% !TEX root = ../main.tex
+\chapter{Summary and outlook}
+\label{chapter:conclusion}
+
+While the interoperability features introduced by modern Fortran standards greatly facilitate the design of reliable and portable interoperable interfaces, the object-oriented features simultaneously complicate it. While Fortran 90 code could present interoperability challenges even for simple procedure calls, those are precluded by strict adherence to the use of interoperable interfaces as defined in the Fortran 2003 standard. In modern Fortran, we identify as the major obstacle to interoperability the presence of external interfaces relying on non-interoperable features such as object-orientation.
+
+In this project, an interoperable interface was designed for use of select components of the Fortran object-oriented library LibPFASST in C. The resulting library, cpfasst, allows leverage by C code of the parallelization in time features of the PFASST method, creating an opportunity for integration with PDE solvers implemented in C, as well as reuse of the interface by other programming languages that also interoperate with C, such as Python and C++.
+
+As part of development, a design pattern was created for an interoperable interface that exposes functionality equivalent to Fortran type inheritance to the C user. While requiring significant knowledge of the library by the interface designer, and sacrificing some of the flexibility afforded to the Fortran user, the proposed pattern is successful in achieving a flexible user implementation from C. It provides a blueprint for future extension of the interoperable interfaces into different LibPFASST components, as well as for creation of interoperable interfaces for object-oriented Fortran code in general. A set of guidelines relating to design of interoperable interfaces and design of Fortran code intended for interoperability is proposed, deriving from lessons learned during the development of cpfasst.
+
+Proposals for future work in this subject are:
+\begin{itemize}
+	\item Application of the methods described in this work to expose other components of the LibPFASST to the C user, in particular sweeper types other than implicit-explicit;
+	\item Refactoring of LibPFASST code according to the findings presented to allow a more natural interoperable interface;
+	\item Study of the performance overhead of the interface in real applications, in particular where it comes to the impact of link-time optimization;
+	\item Investigation of the mechanisms behind the manifestation of invalid memory access in stack and global memory as segmentation faults in future attempts at memory allocation.
+\end{itemize}

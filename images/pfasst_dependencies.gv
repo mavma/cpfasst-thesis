@@ -1,0 +1,23 @@
+digraph "pfasst_dependencies" {
+	graph [concentrate=true id="pfasst_dependencies" rankdir=RL size="8.90625,1000.0"]
+	node [fontname=Helvetica fontsize=10.5 height=0.0 margin=0.08 shape=box]
+	edge [fontname=Helvetica fontsize=9.5]
+
+	"type~pf_imex_sweeper_t" [label=cpf_imex_sweeper_t]
+	"type~pf_user_level_t" [label=cpf_user_level_t]
+	"type~pf_encap_t" [label=cpf_encap_t]
+	"type~pf_factory_t" [label=cpf_factory_t]
+	"type~pf_level_t" [label=pf_level_t]
+	"type~pf_sdcmats_t" [label=pf_sdcmats_t]
+
+	"type~pf_user_level_t":sw -> "type~pf_level_t" [color="#000000" style=dashed]
+	"type~pf_user_level_t" -> "type~pf_encap_t" [color="#000000" style=dashed]
+	"type~pf_imex_sweeper_t" -> "type~pf_encap_t" [color="#000000" style=dashed]
+	"type~pf_factory_t" -> "type~pf_encap_t" [color="#000000" style=dashed]
+	"type~pf_encap_t" -> "type~pf_encap_t" [color="#000000" style=dashed]
+
+
+	"type~pf_level_t" -> "type~pf_user_level_t":w [color="#000000"]
+	"type~pf_level_t" -> "type~pf_encap_t" [color="#000000"]
+	"type~pf_level_t" -> "type~pf_sdcmats_t" [color="#000000"]
+}

@@ -1,0 +1,17 @@
+% !TEX root = ../main.tex
+% Included by MAIN.TEX
+\clearemptydoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Abstract}
+
+\vspace*{2cm}
+\begin{center}
+{\Large \textbf{Abstract}}
+\end{center}
+\vspace{1cm}
+
+% https://users.ece.cmu.edu/~koopman/essays/abstract.html
+
+The ``Parallel Full Approximation Scheme in Space and Time'' (PFASST) method can provide significant wall clock vs. solution improvements for solving partial differential equations on super computers. LibPFASST provides an extensible implementation of PFASST in Fortran, shielding the user from the complexity of the parallel-in-time features. However, the use of Fortran presents challenges for integration with solvers implemented in other programming languages, which are amplified by LibPFASST's use of object-oriented features. 
+
+We examine the challenges involved in Fortran interoperability through a breakdown of the design process of cpfasst, a robust, maintainable and efficient interoperable interface to a subset of LibPFASST components, leveraging Fortran 2003 C interoperability features. We identify reusable patterns for the construction of interoperable interfaces for object-oriented Fortran code, and examine their limitations and methods for validation of the resulting interface. A set of guidelines is proposed for development of interoperability-friendly Fortran code and the corresponding C interfaces.
