@@ -5,7 +5,7 @@ Code developed as part of the thesis:
 
 [cpfasst](https://github.com/mavma/cpfasst)
 
-[Multi-language programming examples](https://github.com/mavma/mlp_examples)
+[Multi-language programming examples](https://github.com/mavma/mlp-examples)
 
 Related code:
 
