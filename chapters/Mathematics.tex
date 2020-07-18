@@ -8,7 +8,7 @@ The definitions in this section are summarized from \cite{dutt2000spectral}, whe
 
 For an initial value problem in the standard form
 \begin{gather}
-    u'(t)=f(t,u(t)),\quad t\in[a,b], \label{eq:ivp} \\
+    u'(t)=f(t,u(t))\,,\quad t\in[a,b]\,, \label{eq:ivp} \\
     u(a)=u_a \nonumber
 \end{gather}
 where \(u_a,u(t)\in\mathbb{C}^n\) and \(f \colon \mathbb{R} \times \mathbb{C}^n \to \mathbb{C}^n \), we can integrate \ref{eq:ivp} with respect to \(t\) to obtain the equivalent Picard equation
@@ -190,8 +190,8 @@ Like Parareal, PFASST partitions the time domain of a problem of the form \ref{e
     \bm{f}^k_n \coloneqq
     \begin{bmatrix}
         f(t_{n,0}, u^k_{n,0}) \\ \vdots \\ f(t_{n,M}, u^k_{n,M})
-    \end{bmatrix}
-\end{equation},
+    \end{bmatrix}\,,
+\end{equation}
 
 with analogous notation for the coarse level. During initialization, we denote as \(\bm{\tilde{u}}^{0,j}_n\) and \(\bm{\tilde{f}}^{0,j}_n\) the values for the \(j\)-th iteration of the coarse propagator.
 
