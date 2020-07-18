@@ -1,0 +1,26 @@
+local/texlive-bibtexextra 2019.52577-1 (texlive-most)
+    TeX Live - Additional BibTeX styles and bibliography databases
+local/texlive-bin 2019.51075-10
+    TeX Live binaries
+local/texlive-core 2019.52579-1 (texlive-most)
+    TeX Live core distribution
+local/texlive-fontsextra 2019.52580-1 (texlive-most)
+    TeX Live - all sorts of extra fonts
+local/texlive-formatsextra 2019.51280-1 (texlive-most)
+    TeX Live - collection of extra TeX 'formats'
+local/texlive-games 2019.52525-1 (texlive-most)
+    TeX Live - Setups for typesetting various board games, including chess
+local/texlive-humanities 2019.52574-1 (texlive-most)
+    TeX Live - LaTeX packages for law, linguistics, social sciences, and humanities
+local/texlive-latexextra 2019.52575-1 (texlive-most)
+    TeX Live - Large collection of add-on packages for LaTeX
+local/texlive-music 2019.52275-1 (texlive-most)
+    TeX Live - Music typesetting packages
+local/texlive-pictures 2019.52499-1 (texlive-most)
+    TeX Live - Packages for drawings graphics
+local/texlive-pstricks 2019.52550-1 (texlive-most)
+    TeX Live - Additional PSTricks packages
+local/texlive-publishers 2019.52538-1 (texlive-most)
+    TeX Live - LaTeX classes and packages for specific publishers
+local/texlive-science 2019.52582-1 (texlive-most)
+    TeX Live - Typesetting for mathematics, natural and computer sciences
