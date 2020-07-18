@@ -13,19 +13,19 @@ For an initial value problem in the standard form
 \end{gather}
 where \(u_a,u(t)\in\mathbb{C}^n\) and \(f \colon \mathbb{R} \times \mathbb{C}^n \to \mathbb{C}^n \), we can integrate \ref{eq:ivp} with respect to \(t\) to obtain the equivalent Picard equation
 \begin{equation}
-    u(t)=u_a + \int_a^t f(\tau,u(\tau))d\tau.
+    u(t)=u_a + \int_a^t f(\tau,u(\tau))d\tau\,.
 	\label{eq:picard_ivp}
 \end{equation}
 
 Given an approximate solution \(\tilde{u}(t) \approx u(t)\) to \ref{eq:picard_ivp}, its quality can be measured by the residual function
 \begin{equation}
-    \varepsilon(t,\tilde{u}(t)) = u_a + \int_a^t f(s,\tilde{u}(s))ds - \tilde{u}(t).
+    \varepsilon(t,\tilde{u}(t)) = u_a + \int_a^t f(s,\tilde{u}(s))ds - \tilde{u}(t)\,.
 	\label{eq:residual}
 \end{equation}
 
 Defining the error \(\delta(t)\) by
 \begin{equation}
-    \delta(t) \coloneqq u(t)-\tilde{u}(t),
+    \delta(t) \coloneqq u(t)-\tilde{u}(t)\,,
 	\label{eq:error}
 \end{equation}
 we can substitute \ref{eq:error} into \ref{eq:picard_ivp}, and, through algebraic manipulation, arrive at
@@ -40,35 +40,35 @@ which is a Picard-type integral in the same form as \ref{eq:picard_ivp}.
 
 Supposing we wish to solve the IVP from and \ref{eq:ivp} in an equispaced grid of \( m+1 \) nodes defined by
 \begin{equation}
-    t_i = a + i \cdot h, \quad i = 0,\ldots,m,
+    t_i = a + i \cdot h, \quad i = 0,\ldots,m\,,
 \end{equation}
 with step size \( h=(b-a)/m \). A method of \(k\)-th order accuracy by definition yields an approximate solution \( \tilde{u} = \tilde{u}_1, \ldots, \tilde{u}_m \) with
 \begin{equation}
-    \tilde{u}_i = u(t_i)+O(h^k).
+    \tilde{u}_i = u(t_i)+O(h^k)\,.
     \label{eq:approx_sol_accuracy}
 \end{equation}
 
 This approximate solution can be interpolated at the grid points \(t_i\) by the unique \(m\)-th order Lagrange polynomial \(u_p(\eta,t)\). This allows the definition of an error function analog to \ref{eq:error}
 \begin{equation}
-    \delta(t) \coloneqq u(t)-u_p(\tilde{u},t),
+    \delta(t) \coloneqq u(t)-u_p(\tilde{u},t)\,,
 	\label{eq:interp_error}
 \end{equation}
 which satisfies the IVP
 \begin{gather}
     \delta'(t) = f(t,\delta(t) + u_p(\tilde{u},t)) - \frac{d}{dt}u_p(\tilde{u},t) \label{eq:error_ivp}\\ 
-    \delta(0) = 0. \nonumber
+    \delta(0) = 0\,. \nonumber
 \end{gather}
 
 Equation \ref{eq:error_ivp} can then be solved for using the same \(k\)-th order method as the original problem, generating an approximation for the error \(\pi_i \approx \delta(t_i)\). This approximation can then be to correct \(\tilde{u}\)
 \begin{equation}
-    \tilde{u}_i + \pi_i \approx y(t_i),
+    \tilde{u}_i + \pi_i \approx y(t_i)\,,
 	\label{eq:dc_correction}
 \end{equation}
 where the corrected solution is of \(2k\)-th order accuracy. This method can then be further iterated by computing a new interpolating polynomial for the updated solution, defining a new error function, and solving the IVP in \ref{eq:error_ivp} to obtain a new estimated error.
 
 After \(J\) iterations, the error of the approximate solution \(\varphi^J(t)\) is of the order \cite{dutt2000spectral} 
 \begin{equation}
-    O(h^{(J+1) \cdot k}).
+    O(h^{(J+1) \cdot k})\,.
 	\label{eq:dc_error}
 \end{equation}
 
@@ -81,7 +81,7 @@ We define \(t \coloneqq (t_i)\) as the nodes in the chosen quadrature in the int
 \begin{equation}
     q_{m,j} \coloneqq
     \frac{1}{\Delta t}
-    \int^{t_m}_a l_j(s)ds, \quad m,j=0,\ldots,M,
+    \int^{t_m}_a l_j(s)ds, \quad m,j=0,\ldots,M\,,
     \label{eq:quadrature_q}
 \end{equation}
 
@@ -89,17 +89,17 @@ where \(l_j\) are the Lagrange polynomials defined by \(t\) and \(\Delta t=b-a\)
 
 \begin{equation}
     U_m = u_0 + \Delta t 
-    \sum_{j=0}^M q_{m,j} f(U_j, t_j), \quad m=0,\ldots,M
+    \sum_{j=0}^M q_{m,j} f(U_j, t_j), \quad m=0,\ldots,M\,,
     \label{eq:sdc_element}
-\end{equation},
+\end{equation}
 
 and the residual \(\varepsilon(t_j,U_j)\) can be computed by
 
 \begin{equation}
     \varepsilon(t_j,U_j) = u_0 + \Delta t 
-    \sum_{j=0}^M q_{m,j} f(U_j, t_j) - U_j, \quad m=0,\ldots,M
+    \sum_{j=0}^M q_{m,j} f(U_j, t_j) - U_j, \quad m=0,\ldots,M\,.
     \label{eq:sdc_element_residual}
-\end{equation}.
+\end{equation}
 
 Using the residual obtained in \refEquation{eq:sdc_element_residual}, \refEquation{eq:dcmethod_ivp} can be solved through the desired scheme, obtaining an approximate error that can be used to correct the current solution like in classical deferred correction. This SDC iteration shown above is also referred to in the context of PFASST as a \textit{sweep}, and the method used in the solution of the error estimate as a \textit{sweeper}.
 
@@ -111,7 +111,7 @@ The \textit{full approximation scheme} (FAS) is a multigrid scheme commonly used
 
 Here, let's denote the problem on level \(\ell\) by
 \begin{equation}
-    A_\ell(u_\ell)=f_\ell,
+    A_\ell(u_\ell)=f_\ell\,,
     \label{eq:fas_l_eq}
 \end{equation}
 the approximate solution on that level by \(v_\ell\), and the interpolation and restriction operators, respectively, by \(I\) and \(R\). A two level FAS scheme for this problem is described as follows \cite{briggs2000multigrid}:
@@ -133,7 +133,7 @@ The equation for the coarse grid in \ref{fas_coarse_step} can alternatively be w
 where the correction term \(\tau_{\ell+1}\) is defined by
 
 \begin{equation}
-    \tau_{\ell+1}=A_{\ell+1}(Rv_{\ell})-RA_\ell(v_\ell).
+    \tau_{\ell+1}=A_{\ell+1}(Rv_{\ell})-RA_\ell(v_\ell)\,.
     \label{eq:fas_tau}
 \end{equation}
 
@@ -154,14 +154,14 @@ Parallelization of the solution of PDEs in the spatial dimensions, including but
 For an IVP of the form \ref{eq:ivp}, the Parareal method for parallelization across \(N\) processors is constructed \cite{ruprecht2014convergence}\cite{gander2007analysis} by partitioning the time domain into slices \([t_{n-1}, t_n], n = 1,\dots,N\), where \(t_0 \coloneqq a < t_1 < \dots < t_N \coloneqq b\) . Let \(\mathcal{F}(u_n, t_{n+1}, t_n)\) (also referred to in the context of Parareal as the \textit{fine propagator}) be an operator providing a sufficiently accurate approximation to \(u(t_{n+1})\) for the initial condition \(u(t_n)=u_n\) (e.g. a higher-order Runge-Kutta method). Serial integration of \ref{eq:ivp} using \(\mathcal{F}\) is equivalent, with \(u_0 \coloneqq u_a\), to evaluating
 
 \begin{equation}
-    u_{n+1} = \mathcal{F}_{\delta t}(u_n, t_{n+1}, t_n), \quad n = 0,\dots,N-1.
+    u_{n+1} = \mathcal{F}_{\delta t}(u_n, t_{n+1}, t_n), \quad n = 0,\dots,N-1\,.
     \label{eq:parareal_seq}
 \end{equation}
 
 Now let \(\mathcal{G}\), the \textit{coarse propagator}, be an operator providing a rougher approximation of \(u(t_{n+1})\), typically a lower-order method with higher time step size. Given an initial approximate solution \(u_n^0, n = n = 0,\dots,N\), the Parareal algorithm performs corrective iterations of the form
 
 \begin{equation}
-    u^{k+1}_{n+1} = \mathcal{G}(u^{k+1}_n, t_{n+1}, t_n) + \mathcal{F}(u^k_n, t_{n+1}, t_n) + \mathcal{G}(u^k_n, t_{n+1}, t_n).
+    u^{k+1}_{n+1} = \mathcal{G}(u^{k+1}_n, t_{n+1}, t_n) + \mathcal{F}(u^k_n, t_{n+1}, t_n) + \mathcal{G}(u^k_n, t_{n+1}, t_n)\,.
     \label{eq:parareal_it}
 \end{equation}
 
