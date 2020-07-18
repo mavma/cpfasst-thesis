@@ -17,6 +17,7 @@ _minted*
 *.toc
 *.xdy
 *.xref
+main.pdf
 
 pythonenv/
 *.sublime-workspace

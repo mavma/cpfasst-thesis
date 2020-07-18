@@ -207,7 +207,7 @@ PFASST execution starts by spreading the initial solution \(u(a)\) to all fine S
             \item Perform coarse SDC sweeps with \(\bm{\tilde{u}}^{0,j-1}_{n}\), \(\bm{\tilde{f}}^{0,j-1}_n\) and \(\bm{\tau}^0_n\), yielding \(\bm{\tilde{u}}^{0,j+1}_{n}\) and \(\bm{\tilde{f}}^{0,j+1}_n\)
             \item If \(n < N-1\): send \(\tilde{u}^{0,j+1}_{n,\tilde{M}}\) to \(P_{n+1}\)
         \end{enumerate}
-    \item Set \(\bm{\tilde{u}}^{0}_{n}\) to \(\bm{\tilde{u}}^{0,n}_{n}\)\)% evaluate \(\bm{\tilde{f}}^{0}_{n}\). removed because value isn't used
+    \item Set \(\bm{\tilde{u}}^{0}_{n}\) to \(\bm{\tilde{u}}^{0,n}_{n}\) % evaluate \(\bm{\tilde{f}}^{0}_{n}\). removed because value isn't used
     \item Interpolate coarse correction \(\bm{\tilde{u}}^{0,n}_{n} - \bm{\tilde{u}}^{0,0}_{n}\), yielding \(\bm{u}^{0}_{n}\). Evaluate \(\bm{f}^{0}_{n}\).
     \item \textbf{PFASST iterations:} For \(k = 1, \dots, K\):
         \begin{enumerate}
@@ -223,9 +223,9 @@ PFASST execution starts by spreading the initial solution \(u(a)\) to all fine S
 \end{enumerate}
 
 \begin{figure}[ht]
-  \centering
+  \centering{}
   \includegraphics[width=\textwidth]{images/pfasst_diagram.pdf}
-  \caption{Representation of the PFASST method using two levels. Created using pfasst-tikz\footnotemark.}
+  \caption{Representation of the PFASST method using two levels. Created using pfasst-tikz \protect\footnotemark.}
 \end{figure}
 % END: ensure it's on the same page as the picture
 \footnotetext{\url{https://github.com/f-koehler/pfasst-tikz}}

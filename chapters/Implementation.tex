@@ -26,7 +26,7 @@ A summary of the elements of LibPFASST usage was presented in \refSection{sec:li
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\textwidth]{images/pf_pfasst_t.pdf}
-  \caption{Hierarchy of derived types for LibPFASST's \textt{pf\_pfasst\_t}, generated using FORD\footnotemark. Dashed outlines denote abstract types. An arrow from A to B indicates that type A contains one or more members of type B.}
+  \caption{Hierarchy of derived types for LibPFASST's \protect\texttt{pf\_pfasst\_t}, generated using FORD\protect\footnotemark. Dashed outlines denote abstract types. An arrow from A to B indicates that type A contains one or more members of type B.}
   \label{fig:libpfasst_types}
 \end{figure}
 % END: ensure it's on the same page as the picture
@@ -246,7 +246,7 @@ One of the best tools for verification of the interoperable interface is easily 
     \label{src:lto_warnings}
 \end{listing} 
 
-Since it emits warnings instead of errors, the use of link-time optimization allows the developer to evaluate whether a mismatch is cause for concern and ignore the warning if not. Its main drawbacks are increased compiling and linking time and increased size of the intermediate binaries. Additionally, as mentioned in \refSections{sec:impl_restrictions}, function pointers were found through testing to obfuscate the context of a call to GCC link-time optimization, so calls made through a function pointer are not subject to these checks.
+Since it emits warnings instead of errors, the use of link-time optimization allows the developer to evaluate whether a mismatch is cause for concern and ignore the warning if not. Its main drawbacks are increased compiling and linking time and increased size of the intermediate binaries. Additionally, as mentioned in \refSection{sec:impl_restrictions}, function pointers were found through testing to obfuscate the context of a call to GCC link-time optimization, so calls made through a function pointer are not subject to these checks.
 
 \subsection*{Memory access checks}
 
