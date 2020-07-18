@@ -1,0 +1,32 @@
+name: build-pdf
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up git repository
+      uses: actions/checkout@v2
+    - name: Run latexmk
+      uses: xu-cheng/latex-action@master
+      with:
+        root_file: main.tex
+        compiler: latexmk
+        args: "-cd -f -pdf -interaction=nonstopmode -synctex=1 -latexoption=--shell-escape -latexoption=--file-line-error"
+        extra_system_packages: "python3=3.8.3-r0"
+        pre_compile: |
+          tlmgr update --self
+          tlmgr update --all
+          python3 -m venv pythonenv
+          . pythonenv/bin/activate 
+          pip install -U pip
+          pip install Pygments==2.6.1
+          deactivate
+    - name: Upload artifact
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: thesis
+        path: main.pdf
